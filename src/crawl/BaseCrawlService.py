@@ -1,15 +1,18 @@
 import asyncio
+import base64
 import os
 import tarfile
 from abc import ABC
-from os import PathLike
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 from urllib.parse import urlparse
 
+import aiofiles
+import pymupdf
 import httpx
 
 from src.config.Config import Config
+from src.crawl.model.Arxiv import PDFFigureB64
 
 
 class BaseCrawlService(ABC):
@@ -76,3 +79,25 @@ class BaseCrawlService(ABC):
 
         extracted = await asyncio.to_thread(_extract)
         return [str(p) for p in extracted]
+
+    def pdf_to_base64_pymupdf(self, pdf_path: str, zoom: float = 2.0, fmt: str = "PNG",
+                              first_page: Optional[int] = None, last_page: Optional[int] = None) -> List[PDFFigureB64]:
+        name, ext = os.path.splitext(os.path.basename(pdf_path))
+        doc = pymupdf.open(pdf_path)
+        start = (first_page - 1) if first_page else 0
+        end = last_page if last_page else doc.page_count
+        results = []
+        mat = pymupdf.Matrix(zoom, zoom)
+        for i in range(start, end):
+            page = doc.load_page(i)
+            pix = page.get_pixmap(matrix=mat, alpha=(fmt.upper() == "PNG"))
+            img_bytes = pix.tobytes(output=fmt.upper())
+            b64 = base64.b64encode(img_bytes).decode("utf-8")
+            results.append(PDFFigureB64(name=f'{name}-{i}', b64=b64))
+        doc.close()
+        return results
+
+    async def read_text(self,path, encoding='utf-8'):
+        async with aiofiles.open(path, mode='r', encoding=encoding) as f:
+            content = await f.read()
+        return content

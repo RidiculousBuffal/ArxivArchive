@@ -5,7 +5,7 @@ from src.crawl.ArxivDailyCrawlService import ArxivDailyCrawlService
 
 async def main():
     service = ArxivDailyCrawlService('cs.AI')
-    src = 'https://arxiv.org/src/2511.16837'
+    src = 'https://arxiv.org/src/2511.16814'
     p = await service.download_attachment_async(src)
     print(p)
     files = await service.extract_tar_gz(p)

@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timezone
 from typing import Literal, List, Optional
 from urllib.parse import urljoin
@@ -5,7 +6,7 @@ from urllib.parse import urljoin
 from bs4 import BeautifulSoup
 
 from src.crawl.BaseCrawlService import BaseCrawlService
-from src.crawl.model.Arxiv import ArxivArticle, ArxivPageResult
+from src.crawl.model.Arxiv import ArxivArticle, ArxivPageResult, ArxivMetaData, Tex
 
 
 class ArxivDailyCrawlService(BaseCrawlService):
@@ -210,3 +211,20 @@ class ArxivDailyCrawlService(BaseCrawlService):
         html = await self.fetch_page_async(self.api_path)
         page_result = self.parse_articles(html, self.full_path)
         return page_result
+
+    async def _process_tex_file(self, tex_path: str):
+        name, ext = os.path.splitext(os.path.basename(tex_path))
+        text = await self.read_text(tex_path)
+        return Tex(name=name, text=text)
+
+    async def _process_file_lists(self, paths: List[str]) -> ArxivMetaData:
+        figures = []
+        texts = []
+        # only extract .tex and .pdf(figure)
+        for path in paths:
+            if path.endswith(".pdf"):
+                figures.extend(self.pdf_to_base64_pymupdf(path, 1, 'PNG'))
+            elif path.endswith(".tex"):
+                tex = await self._process_tex_file(path)
+                texts.append(tex)
+        return ArxivMetaData(figures=figures, texts=texts)
