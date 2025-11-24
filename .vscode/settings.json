@@ -1,0 +1,9 @@
+{
+    "workbench.iconTheme": "material-icon-theme",
+    "workbench.colorTheme": "Quiet Light",
+    "chat.disableAIFeatures": true,
+    "python.autoComplete.extraPaths": ["${workspaceFolder}/.venv"],
+    "python.terminal.launchArgs": [
+        
+    ]
+}
