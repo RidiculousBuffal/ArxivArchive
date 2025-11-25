@@ -1,6 +1,7 @@
 from typing import Literal
 
 from src.ai.ArxivAnalyzer import ArxivAnalyzer
+from src.config.Config import Config
 from src.crawl.ArxivDailyCrawlService import ArxivDailyCrawlService
 from src.crawl.model.Arxiv import ArxivPageResult, ArxivArticle
 
@@ -65,6 +66,9 @@ class ArxivDailyWorkflow:
         paths = await self.crawlService.download_attachment_async(pdf_url.replace('pdf', 'src'))
         files = await self.crawlService.extract_tar_gz(paths)
         metadata = await self.crawlService.process_file_lists(files)
+        # process image limit
+        if len(metadata.figures) >Config.MAX_FIGURE_NUM:
+            metadata.figures = metadata.figures[:Config.MAX_FIGURE_NUM]
         return metadata
 
     # 02 fill the metaData
