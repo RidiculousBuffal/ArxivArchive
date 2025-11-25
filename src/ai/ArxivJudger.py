@@ -21,5 +21,5 @@ class ArxivJudger(BaseAI):
         self.judgeAgent = create_agent(self.model,response_format=JudgeResult)
     async def judge(self,article:ArxivArticle)->JudgeResult:
         humanMessage = HumanMessage(content = f"""文章元信息:\n{article.model_dump_json(ensure_ascii=False)}""")
-        res =  await self.judgeAgent.ainvoke({"messages":[self.systemMessage,humanMessage]})
+        res =  await self.judgeAgent.ainvoke({"messages":[self.systemMessage,humanMessage]}) # type: ignore
         return res['structured_response']
