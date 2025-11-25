@@ -2,20 +2,16 @@ from datetime import datetime
 from typing import Optional, List
 
 from pydantic import HttpUrl, BaseModel, Field
+from src.models.Content import FigureB64,Text
 
 
-class PDFFigureB64(BaseModel):
-    name: str
-    b64: str
 
 
-class Tex(BaseModel):
-    name: str
-    text: str
-
+class Tex(Text):
+    pass
 
 class ArxivMetaData(BaseModel):
-    figures: List[PDFFigureB64]
+    figures: List[FigureB64]
     texts: List[Tex]
 
 
@@ -44,6 +40,6 @@ class ArxivArticle(BaseModel):
 
 class ArxivPageResult(BaseModel):
     category: str
-    url: HttpUrl
-    scraped_at: datetime
-    articles: List[ArxivArticle]
+    url: Optional[HttpUrl] = None
+    scraped_at: Optional[datetime] = None
+    articles: Optional[List[ArxivArticle]] = []

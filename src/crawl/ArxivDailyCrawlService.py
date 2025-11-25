@@ -3,10 +3,13 @@ from datetime import datetime, timezone
 from typing import Literal, List, Optional
 from urllib.parse import urljoin
 
+import bs4
 from bs4 import BeautifulSoup
+from pydantic import HttpUrl
 
 from src.crawl.BaseCrawlService import BaseCrawlService
 from src.crawl.model.Arxiv import ArxivArticle, ArxivPageResult, ArxivMetaData, Tex
+from src.models.Content import FigureB64
 
 
 class ArxivDailyCrawlService(BaseCrawlService):
@@ -59,7 +62,7 @@ class ArxivDailyCrawlService(BaseCrawlService):
         self.api_path = f"/list/{category}/new"
         self.full_path = f"{self.BASE_URL}{self.api_path}"
 
-    def parse_single_article(self, dt, dd, category: str, scraped_at: datetime) -> ArxivArticle:
+    def parse_single_article(self, dt:bs4.element.Tag, dd:bs4.element.Tag, category: str, scraped_at: datetime) -> ArxivArticle:
         # --- 解析 dt 部分 ---
         a_tags = dt.find_all("a")
 
@@ -161,7 +164,7 @@ class ArxivDailyCrawlService(BaseCrawlService):
             index=index,
             arxiv_id=arxiv_id,
             category=category,
-            abs_url=abs_url,
+            abs_url=HttpUrl(abs_url),
             pdf_url=pdf_url,
             html_url=html_url,
             other_url=other_url,
@@ -202,7 +205,7 @@ class ArxivDailyCrawlService(BaseCrawlService):
 
         return ArxivPageResult(
             category=category,
-            url=list_url,
+            url=HttpUrl(list_url),
             scraped_at=scraped_at,
             articles=articles,
         )
@@ -217,14 +220,26 @@ class ArxivDailyCrawlService(BaseCrawlService):
         text = await self.read_text(tex_path)
         return Tex(name=name, text=text)
 
-    async def _process_file_lists(self, paths: List[str]) -> ArxivMetaData:
+    async def process_file_lists(self, paths: List[str]) -> ArxivMetaData:
         figures = []
         texts = []
         # only extract .tex and .pdf(figure)
+
         for path in paths:
             if path.endswith(".pdf"):
                 figures.extend(self.pdf_to_base64_pymupdf(path, 1, 'PNG'))
             elif path.endswith(".tex"):
                 tex = await self._process_tex_file(path)
                 texts.append(tex)
+            else:
+                res = self._get_minetype_and_b64(path)
+                if res:
+                    mime,b64 = res
+                    if not mime.startswith('image'):
+                        continue
+                    if not b64:
+                        continue
+                    name, ext = os.path.splitext(os.path.basename(path))
+                    figures.append(FigureB64(mime=mime, b64=b64,name=name))
+
         return ArxivMetaData(figures=figures, texts=texts)

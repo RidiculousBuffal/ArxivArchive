@@ -1,10 +1,11 @@
 import asyncio
 import base64
+import mimetypes
 import os
 import tarfile
 from abc import ABC
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from urllib.parse import urlparse
 
 import aiofiles
@@ -12,7 +13,7 @@ import pymupdf
 import httpx
 
 from src.config.Config import Config
-from src.crawl.model.Arxiv import PDFFigureB64
+from src.crawl.model.Arxiv import FigureB64
 
 
 class BaseCrawlService(ABC):
@@ -57,7 +58,7 @@ class BaseCrawlService(ABC):
     async def extract_tar_gz(self, path: str) -> List[str]:
         p = Path(path)
         if not p.name.endswith(".tar.gz"):
-            return []
+            return [path]
         archive_name = p.name
         if archive_name.endswith(".tar.gz"):
             archive_name = archive_name[: -len(".tar.gz")]
@@ -81,7 +82,7 @@ class BaseCrawlService(ABC):
         return [str(p) for p in extracted]
 
     def pdf_to_base64_pymupdf(self, pdf_path: str, zoom: float = 2.0, fmt: str = "PNG",
-                              first_page: Optional[int] = None, last_page: Optional[int] = None) -> List[PDFFigureB64]:
+                              first_page: Optional[int] = None, last_page: Optional[int] = None) -> List[FigureB64]:
         name, ext = os.path.splitext(os.path.basename(pdf_path))
         doc = pymupdf.open(pdf_path)
         start = (first_page - 1) if first_page else 0
@@ -93,7 +94,7 @@ class BaseCrawlService(ABC):
             pix = page.get_pixmap(matrix=mat, alpha=(fmt.upper() == "PNG"))
             img_bytes = pix.tobytes(output=fmt.upper())
             b64 = base64.b64encode(img_bytes).decode("utf-8")
-            results.append(PDFFigureB64(name=f'{name}-{i}', b64=b64))
+            results.append(FigureB64(name=f'{name}-{i}', b64=b64,mime='image/png'))
         doc.close()
         return results
 
@@ -101,3 +102,31 @@ class BaseCrawlService(ABC):
         async with aiofiles.open(path, mode='r', encoding=encoding) as f:
             content = await f.read()
         return content
+
+    def _get_minetype_and_b64(self,path: str) -> Optional[Tuple[str, Optional[str]]]:
+        """
+        返回 (mime_type, base64_str_or_None)：
+          - 若文件不存在或读取失败 -> 返回 None
+          - 若文件大小 > 3MB -> 返回 (mime_type, None)
+          - 否则 -> 返回 (mime_type, base64_string)
+        使用 mimetypes.guess_type 来确定 mime type，无法猜测时使用 "application/octet-stream"。
+        """
+        p = Path(path)
+        if not p.is_file():
+            return None
+        mime_type, _ = mimetypes.guess_type(str(p))
+        if not mime_type:
+            mime_type = "application/octet-stream"
+        try:
+            size = p.stat().st_size
+        except (OSError, IOError):
+            return None
+        MAX_BYTES = 3 * 1024 * 1024
+        if size > MAX_BYTES:
+            return mime_type, None
+        try:
+            data = p.read_bytes()
+        except (OSError, IOError):
+            return None
+        b64_str = base64.b64encode(data).decode("utf-8")
+        return mime_type, b64_str
