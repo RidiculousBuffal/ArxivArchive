@@ -16,3 +16,4 @@ class Config:
     JUDGER_MODEL = os.getenv('JUDGER_MODEL') or 'gpt-5-mini'
     RESEARCH_PREFER = os.getenv('RESEARCH_PREFER') or '<everything>'
     RESEARCH_NOT_PREFER= os.getenv('RESEARCH_NOT_PREFER') or ''
+    PREFER_CATEGORY = os.getenv('PREFER_CATEGORY').split(',')

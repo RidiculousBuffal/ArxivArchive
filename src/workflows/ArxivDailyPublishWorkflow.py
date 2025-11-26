@@ -41,4 +41,5 @@ class ArxivDailyPublishWorkflow:
         path = Path(Config.ANALYZE_REPORT_PATH)/TimeUtils.current_date_str()/'publish.md'
         with open(path,'w',encoding='utf-8') as f:
             f.write(markdown)
+        return markdown
 

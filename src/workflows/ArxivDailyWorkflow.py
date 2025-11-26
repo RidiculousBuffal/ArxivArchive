@@ -310,8 +310,8 @@ class ArxivDailyWorkflow:
         try:
             await self.crawl()
             await self.judge_articles()
-            await self.fill_meta_data()
             if not without_analyze:
+                await self.fill_meta_data()
                 await self.analyze()
             await self.save_json()
             self.logger.info("🎉 全部流程完成！")
