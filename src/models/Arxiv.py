@@ -18,7 +18,7 @@ class JudgeResult(BaseModel):
     chinese_name: str = Field(description='论文中文标题')
     chinese_abstract: str = Field(description='中文摘要')
     worth_read: bool = Field(description='根据我们的研究方向判断是否值得继续阅读')
-    comment: str = Field(description='你的评价,为什么认为他值得阅读,和我们的领域有什么关系')
+    comment: str = Field(description='你的评价,为什么认为他值得阅读,和我们的领域有什么关系,请勿使用任何的markdown语法')
 
 
 class ArxivArticle(BaseModel):
