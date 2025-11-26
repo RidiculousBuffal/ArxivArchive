@@ -16,6 +16,14 @@ jobs:
     # 将项目根目录下的 src 加入 PYTHONPATH，适用于所有 steps
     env:
       PYTHONPATH: ${{ github.workspace }}/src
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+      ANALYZER_MODEL: ${{ secrets.ANALYZER_MODEL }}
+      MAX_FIGURE_NUM: ${{ secrets.MAX_FIGURE_NUM }}
+      JUDGER_MODEL: ${{ secrets.JUDGER_MODEL }}
+      RESEARCH_PREFER: ${{ secrets.RESEARCH_PREFER }}
+      RESEARCH_NOT_PREFER: ${{ secrets.RESEARCH_NOT_PREFER }}
+      PREFER_CATEGORY: ${{ secrets.PREFER_CATEGORY }}
 
     steps:
       - name: 1. Checkout repository
@@ -33,15 +41,6 @@ jobs:
         run: uv sync --locked --all-extras
 
       - name: 5. Run githubPublish.py script
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
-          ANALYZER_MODEL: ${{ secrets.ANALYZER_MODEL }}
-          MAX_FIGURE_NUM: ${{ secrets.MAX_FIGURE_NUM }}
-          JUDGER_MODEL: ${{ secrets.JUDGER_MODEL }}
-          RESEARCH_PREFER: ${{ secrets.RESEARCH_PREFER }}
-          RESEARCH_NOT_PREFER: ${{ secrets.RESEARCH_NOT_PREFER }}
-          PREFER_CATEGORY: ${{ secrets.PREFER_CATEGORY }}
         run: uv run python -m scripts.githubPublish
 
       - name: 6. Get today's report path
