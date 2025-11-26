@@ -13,6 +13,10 @@ jobs:
       issues: write
       contents: read
 
+    # 将项目根目录下的 src 加入 PYTHONPATH，适用于所有 steps
+    env:
+      PYTHONPATH: ${{ github.workspace }}/src
+
     steps:
       - name: 1. Checkout repository
         uses: actions/checkout@v4
@@ -38,13 +42,13 @@ jobs:
           RESEARCH_PREFER: ${{ secrets.RESEARCH_PREFER }}
           RESEARCH_NOT_PREFER: ${{ secrets.RESEARCH_NOT_PREFER }}
           PREFER_CATEGORY: ${{ secrets.PREFER_CATEGORY }}
-        run: python -m "scripts/githubPublish"
+        run: python -m scripts.githubPublish
 
       - name: 6. Get today's report path
         id: get_path
         run: |
           set -e
-          md_path="$(python -m scripts/getTodayPath)"
+          md_path="$(python -m scripts.getTodayPath)"
           if [ -z "$md_path" ]; then
             echo "Error: getTodayPath.py returned empty path" >&2
             exit 1
