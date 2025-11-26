@@ -30,7 +30,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: 4. Install dependencies with uv
-        run: uv pip sync --no-cache
+        run: uv sync --locked --all-extras
 
       - name: 5. Run githubPublish.py script
         env:
