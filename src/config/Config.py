@@ -17,4 +17,4 @@ class Config:
     RESEARCH_PREFER = os.getenv('RESEARCH_PREFER') or '<everything>'
     RESEARCH_NOT_PREFER= os.getenv('RESEARCH_NOT_PREFER') or ''
     PREFER_CATEGORY = os.getenv('PREFER_CATEGORY').split(',')
-    ONLY_INCLUDE_WORTH_READ = True if os.getenv('ONLY_INCLUDE_WORTH_READ') == 1 else False
+    ONLY_INCLUDE_WORTH_READ = True if int(os.getenv('ONLY_INCLUDE_WORTH_READ')) == 1 else False
