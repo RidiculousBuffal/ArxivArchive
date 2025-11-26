@@ -1,0 +1,84 @@
+
+name: Daily Arxiv Report
+
+on:
+  # 允许你从 GitHub UI 的 Actions 标签页手动触发此工作流
+  workflow_dispatch:
+
+  # 每天的特定时间自动运行 (此处设置为 UTC 时间早上 8 点)
+  # 使用 crontab 格式, '分钟 小时 日 月 星期'
+  # 您可以根据需要修改时间, 例如 '0 1 * * *' 代表 UTC 时间凌晨 1 点
+  schedule:
+    - cron: '0 8 * * *'
+
+jobs:
+  build-and-publish-report:
+    runs-on: ubuntu-latest
+
+    # 授予创建 Issue 的权限
+    permissions:
+      issues: write
+      contents: read # 默认需要读取仓库内容
+
+    steps:
+      - name: 1. Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 2. Set up Python 3.11 and uv
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv package manager
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Add uv to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies with uv
+        run: uv pip sync --no-cache
+
+      - name: 3. Run githubPublish.py script
+        # 这个步骤会使用你在仓库 Secrets 中设置的环境变量
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_BASE_URL: ${{ secrets.OPENAI_BASE_URL }}
+          ANALYZER_MODEL: ${{ secrets.ANALYZER_MODEL }}
+          MAX_FIGURE_NUM: ${{ secrets.MAX_FIGURE_NUM }}
+          JUDGER_MODEL: ${{ secrets.JUDGER_MODEL }}
+          RESEARCH_PREFER: ${{ secrets.RESEARCH_PREFER }}
+          RESEARCH_NOT_PREFER: ${{ secrets.RESEARCH_NOT_PREFER }}
+          PREFER_CATEGORY: ${{ secrets.PREFER_CATEGORY }}
+        run: python scripts/githubPublish.py
+
+      - name: 4. Get today's report path
+        id: get_path # 给这个步骤设置一个ID, 以便后续引用其输出
+        run: |
+          # 运行脚本并将输出（也就是文件路径）设置为一个名为 "md_path" 的输出变量
+          echo "md_path=$(python scripts/getTodayPath.py)" >> $GITHUB_OUTPUT
+
+      - name: 5. Check if report file exists
+        id: check_file
+        run: |
+          MD_FILE_PATH="${{ steps.get_path.outputs.md_path }}"
+          echo "Checking for file: $MD_FILE_PATH"
+          if [[ -f "$MD_FILE_PATH" ]]; then
+            echo "Report file found. Proceeding."
+            # 提取文件名作为 Issue 标题
+            ISSUE_TITLE=$(basename "$MD_FILE_PATH")
+            echo "issue_title=$ISSUE_TITLE" >> $GITHUB_OUTPUT
+          else
+            echo "Error: Report file not found at $MD_FILE_PATH. Stopping workflow."
+            exit 1 # 终止工作流
+          fi
+
+      - name: 6. Create GitHub Issue
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          # 使用上一步提取的文件名作为 Issue 标题
+          title: ${{ steps.check_file.outputs.issue_title }}
+          # 使用 get_path 步骤获取的文件路径作为 Issue 内容文件
+          content-filepath: ${{ steps.get_path.outputs.md_path }}
+          # (可选) 为创建的 Issue 添加标签，可以添加多个，用逗号分隔
+          labels: arxiv-report, automated
+
