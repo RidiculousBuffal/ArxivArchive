@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import pandas as pd
 from pydantic import BaseModel
 
 from src.config.Config import Config
@@ -23,16 +22,26 @@ class ArxivDailyPublishWorkflow:
         finalMarkdown = ''
         for j in jsons:
             finalMarkdown += f"# {j.category}\n"
-            prs = []
             for a in j.articles:
-                prs.append(self.PublishResult(arxiv_id=a.arxiv_id, english_title=a.title,
-                                              chinese_title=a.judgerResult.chinese_name,
-                                              chinese_abstract=a.judgerResult.chinese_abstract,
-                                              worth_read=str(a.judgerResult.worth_read),
-                                              comment=a.judgerResult.comment.replace('\n','<br/>'),
-                                              download_url=str(a.pdf_url)).model_dump())
-            dataframe = pd.DataFrame(prs)
-            finalMarkdown += f'{dataframe.to_markdown(index=False)}\n'
+                finalMarkdown += f'## {a.title}\n'
+                pr = self.PublishResult(
+                    arxiv_id=a.arxiv_id,
+                    english_title=a.title,
+                    chinese_title=a.judgerResult.chinese_name,
+                    chinese_abstract=a.judgerResult.chinese_abstract,
+                    worth_read=str(a.judgerResult.worth_read),
+                    comment=a.judgerResult.comment.replace('\n', '<br/>'),
+                    download_url=str(a.pdf_url)
+                ).model_dump()
+
+                finalMarkdown += f"- 论文ID: {pr.get('arxiv_id', '')}\n"
+                finalMarkdown += f"- 英文标题: {pr.get('english_title', '')}\n"
+                finalMarkdown += f"- 中文标题: {pr.get('chinese_title', '')}\n"
+                finalMarkdown += f"- 中文摘要: {pr.get('chinese_abstract', '')}\n"
+                finalMarkdown += f"- 是否值得阅读: {pr.get('worth_read', '')}\n"
+                finalMarkdown += f"- 评论: {pr.get('comment', '')}\n"
+                finalMarkdown += f"- 下载链接: {pr.get('download_url', '')}\n"
+                finalMarkdown += '\n'
             finalMarkdown += '---\n'
         return finalMarkdown
 
