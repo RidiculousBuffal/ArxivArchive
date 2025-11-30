@@ -3,7 +3,7 @@ name: Daily Arxiv Report
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 1 * * *'
+    - cron: '0 1 * * 1-5'
 
 jobs:
   build-and-publish-report:
@@ -13,6 +13,7 @@ jobs:
       issues: write
       contents: read
 
+    # 将项目根目录下的 src 加入 PYTHONPATH，适用于所有 steps
     env:
       PYTHONPATH: ${{ github.workspace }}/src
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -26,14 +27,6 @@ jobs:
       ONLY_INCLUDE_WORTH_READ: ${{secrets.ONLY_INCLUDE_WORTH_READ}}
 
     steps:
-      - name: 0. Skip on weekend
-        run: |
-          day=$(date -u +%u)  # 1-5: Mon-Fri, 6: Sat, 7: Sun (UTC)
-          if [ "$day" -ge 6 ]; then
-            echo "Weekend detected (day=$day), skipping workflow."
-            exit 0
-          fi
-
       - name: 1. Checkout repository
         uses: actions/checkout@v4
 
