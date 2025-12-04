@@ -3,7 +3,7 @@ name: Daily Arxiv Report
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 1 * * 1-5'
+    - cron: '0 1 * * 2-5'
 
 jobs:
   build-and-publish-report:
