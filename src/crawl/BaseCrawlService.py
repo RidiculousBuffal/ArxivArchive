@@ -30,8 +30,14 @@ class BaseCrawlService(ABC):
 
     async def fetch_page_async(self, url) -> str:
         resp = await self.client.get(url, timeout=20.0)
-        resp.raise_for_status()
-        return resp.text
+        try:
+            resp.raise_for_status()
+            return resp.text
+        except Exception as e:
+            print(f"访问 {url} 时候出错:")
+            print(e)
+            print(resp.content.decode("utf-8"))
+            return ""
 
     def _download_with_httpx_sync(self, url: str, target_folder: str) -> str:
         os.makedirs(target_folder, exist_ok=True)

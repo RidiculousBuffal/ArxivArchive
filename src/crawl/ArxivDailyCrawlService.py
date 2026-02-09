@@ -172,6 +172,8 @@ class ArxivDailyCrawlService(BaseCrawlService):
 
     async def crawl(self):
         html = await self.fetch_page_async(self.api_path)
+        if html == '':
+            exit(0)
         page_result = self.parse_articles(html, self.full_path)
         return page_result
 
