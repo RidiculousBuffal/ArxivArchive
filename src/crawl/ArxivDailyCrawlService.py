@@ -142,7 +142,14 @@ class ArxivDailyCrawlService(BaseCrawlService):
 
         dl = soup.find("dl", id="articles")
         if not dl:
-            raise RuntimeError("Could not find <dl id='articles'> in the page.")
+            scraped_at = datetime.now(timezone.utc)
+            print(f"Warning: Could not find <dl id='articles'> in the page for {list_url}. The listing may be empty (e.g., weekend/holiday).")
+            return ArxivPageResult(
+                category=self.category,
+                url=HttpUrl(list_url),
+                scraped_at=scraped_at,
+                articles=[],
+            )
 
         dts = dl.find_all("dt", recursive=False)
         dds = dl.find_all("dd", recursive=False)
